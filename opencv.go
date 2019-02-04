@@ -21,6 +21,9 @@ import (
 // ImageOrientation describes how the decoded image is oriented according to its metadata.
 type ImageOrientation int
 
+// ImageFitDirection describes where the decoded image will be centred when cropped
+type ImageFitDirection int
+
 const (
 	JpegQuality    = int(C.CV_IMWRITE_JPEG_QUALITY)
 	PngCompression = int(C.CV_IMWRITE_PNG_COMPRESSION)
@@ -36,6 +39,12 @@ const (
 	OrientationRightTop    = ImageOrientation(C.CV_IMAGE_ORIENTATION_RT)
 	OrientationRightBottom = ImageOrientation(C.CV_IMAGE_ORIENTATION_RB)
 	OrientationLeftBottom  = ImageOrientation(C.CV_IMAGE_ORIENTATION_LB)
+
+	FitMiddle ImageFitDirection = iota
+	FitTopLeft
+	FitTopRight
+	FitBottomLeft
+	FitBottomRight
 )
 
 // PixelType describes the base pixel type of the image.
@@ -168,12 +177,7 @@ func (f *Framebuffer) ResizeTo(width, height int, dst *Framebuffer) error {
 	return nil
 }
 
-// Fit performs a resizing and cropping transform on the Framebuffer and puts the result
-// in the provided destination Framebuffer. This function does preserve aspect ratio
-// but will crop columns or rows from the edges of the image as necessary in order to
-// keep from stretching the image content. Returns an error if the destination is
-// not large enough to hold the given dimensions.
-func (f *Framebuffer) Fit(width, height int, dst *Framebuffer) error {
+func (f *Framebuffer) fit(width, height int, dst *Framebuffer, fitDir ImageFitDirection) error {
 	if f.mat == nil {
 		return ErrFrameBufNoPixels
 	}
@@ -194,12 +198,28 @@ func (f *Framebuffer) Fit(width, height int, dst *Framebuffer) error {
 	}
 
 	var left, top int
-	left = int(float64(f.width-widthPostCrop) * 0.5)
+	switch fitDir {
+	case FitMiddle:
+		left = int(float64(f.width-widthPostCrop) * 0.5)
+		top = int(float64(f.height-heightPostCrop) * 0.5)
+	case FitTopLeft:
+		left = 0
+		top = 0
+	case FitTopRight:
+		left = f.width - widthPostCrop
+		top = 0
+	case FitBottomLeft:
+		left = 0
+		top = f.height - heightPostCrop
+	case FitBottomRight:
+		left = f.width - widthPostCrop
+		top = f.height - heightPostCrop
+	}
+
 	if left < 0 {
 		left = 0
 	}
 
-	top = int(float64(f.height-heightPostCrop) * 0.5)
 	if top < 0 {
 		top = 0
 	}
@@ -213,6 +233,22 @@ func (f *Framebuffer) Fit(width, height int, dst *Framebuffer) error {
 	}
 	C.opencv_mat_resize(newMat, dst.mat, C.int(width), C.int(height), C.CV_INTER_AREA)
 	return nil
+}
+
+// Fit performs a resizing and cropping transform on the Framebuffer and puts the result
+// in the provided destination Framebuffer. This function does preserve aspect ratio
+// but will crop columns or rows from the edges of the image as necessary in order to
+// keep from stretching the image content.  The resulting image will be centred around
+// the middle of the original image.  Returns an error if the destination is not large
+// enough to hold the given dimensions.
+func (f *Framebuffer) Fit(width, height int, dst *Framebuffer) error {
+	return f.fit(width, height, dst, FitMiddle)
+}
+
+// FitDirection performs the same functionality as Fit, but aligns the image to the
+// corner specified by ImageFitDirection.
+func (f *Framebuffer) FitDirection(width, height int, dst *Framebuffer, fitDir ImageFitDirection) error {
+	return f.fit(width, height, dst, fitDir)
 }
 
 // Width returns the width of the contained pixel data in number of pixels. This may

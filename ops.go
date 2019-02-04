@@ -8,8 +8,12 @@ type ImageOpsSizeMethod int
 
 const (
 	ImageOpsNoResize ImageOpsSizeMethod = iota
-	ImageOpsFit
 	ImageOpsResize
+	ImageOpsFit
+	ImageOpsFitTopLeft
+	ImageOpsFitTopRight
+	ImageOpsFitBottomLeft
+	ImageOpsFitBottomRight
 )
 
 // ImageOptions controls how ImageOps resizes and encodes the
@@ -98,6 +102,17 @@ func (o *ImageOps) fit(d Decoder, width, height int) error {
 	return nil
 }
 
+func (o *ImageOps) fitDirection(d Decoder, width, height int, fitDir ImageFitDirection) error {
+	active := o.active()
+	secondary := o.secondary()
+	err := active.FitDirection(width, height, secondary, fitDir)
+	if err != nil {
+		return err
+	}
+	o.swap()
+	return nil
+}
+
 func (o *ImageOps) resize(d Decoder, width, height int) error {
 	active := o.active()
 	secondary := o.secondary()
@@ -158,10 +173,19 @@ func (o *ImageOps) Transform(d Decoder, opt *ImageOptions, dst []byte) ([]byte, 
 
 		o.normalizeOrientation(h.Orientation())
 
-		if opt.ResizeMethod == ImageOpsFit {
-			o.fit(d, opt.Width, opt.Height)
-		} else if opt.ResizeMethod == ImageOpsResize {
+		switch opt.ResizeMethod {
+		case ImageOpsResize:
 			o.resize(d, opt.Width, opt.Height)
+		case ImageOpsFit:
+			o.fit(d, opt.Width, opt.Height)
+		case ImageOpsFitTopLeft:
+			o.fitDirection(d, opt.Width, opt.Height, FitTopLeft)
+		case ImageOpsFitTopRight:
+			o.fitDirection(d, opt.Width, opt.Height, FitTopRight)
+		case ImageOpsFitBottomLeft:
+			o.fitDirection(d, opt.Width, opt.Height, FitBottomLeft)
+		case ImageOpsFitBottomRight:
+			o.fitDirection(d, opt.Width, opt.Height, FitBottomRight)
 		}
 
 		var content []byte
