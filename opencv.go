@@ -193,6 +193,20 @@ func (f *Framebuffer) ResizeTo(width, height int, dst *Framebuffer) error {
 	return nil
 }
 
+// PictureInPicture allows you to take the src and place it inside this buffer (the destination).
+// The x/y arguments allow you to set the co-ordinates where this will be placed.
+func (f *Framebuffer) PictureInPicture(src *Framebuffer, x, y int) {
+	if x < 1 {
+		x = 1
+	}
+
+	if y < 1 {
+		y = 1
+	}
+
+	C.opencv_mat_picture_in_picture(src.mat, f.mat, C.int(x), C.int(y))
+}
+
 // Fit performs a resizing and cropping transform on the Framebuffer and puts the result
 // in the provided destination Framebuffer. This function does preserve aspect ratio
 // but will crop columns or rows from the edges of the image as necessary in order to

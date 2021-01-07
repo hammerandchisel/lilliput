@@ -147,6 +147,13 @@ void opencv_mat_resize(const opencv_mat src, opencv_mat dst, int width, int heig
     cv::resize(*static_cast<const cv::Mat *>(src), *static_cast<cv::Mat *>(dst), cv::Size(width, height), 0, 0, interpolation);
 }
 
+void opencv_mat_picture_in_picture(const opencv_mat src, opencv_mat dst, int x, int y) {
+    auto dstMat = *static_cast<cv::Mat *>(dst);
+    auto srcMatPtr = static_cast<cv::Mat *>(src);
+    cv::Mat Region = dstMat(CvRect(x, y, srcMatPtr->cols, srcMatPtr->rows));
+    srcMatPtr->copyTo(Region);
+}
+
 opencv_mat opencv_mat_crop(const opencv_mat src, int x, int y, int width, int height) {
     auto ret = new cv::Mat;
     *ret = (*static_cast<const cv::Mat *>(src))(cv::Rect(x, y, width, height));

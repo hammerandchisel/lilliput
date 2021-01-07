@@ -209,6 +209,13 @@ pass the `orientation` value given by the image's `ImageHeader`, then the
 resulting image has its orientation normalized to the
 default orientation.
 
+
+```go
+func (f *lilliput.Framebuffer) PictureInPicture(src *Framebuffer, x, y int)
+```
+Allows you to place `src` into the frame buffer which you are calling this from.
+You can use `x` and `y` to set the co-ordinates where `src` will be placed.
+
 ```go
 func (f *lilliput.Framebuffer) ResizeTo(width, height int, dst *lilliput.Framebuffer) error
 ```

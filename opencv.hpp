@@ -55,6 +55,7 @@ void opencv_mat_orientation_transform(CVImageOrientation orientation, opencv_mat
 int opencv_mat_get_width(const opencv_mat mat);
 int opencv_mat_get_height(const opencv_mat mat);
 void *opencv_mat_get_data(const opencv_mat mat);
+void opencv_mat_picture_in_picture(const opencv_mat src, opencv_mat dst, int x, int y);
 
 opencv_encoder opencv_encoder_create(const char *ext, opencv_mat dst);
 void opencv_encoder_release(opencv_encoder e);
